@@ -3,13 +3,6 @@ import os
 import math
 import time
 
-# def createGenome(genomeLength):
-#     genome = []
-#     for i in range(genomeLength + 1):
-#         gene = os.urandom(4).hex()
-#         genome.append(gene)
-#     return genome
-
 class Genome:
     def __init__(self, length=10, owner=None):
         self.owner=owner
@@ -26,20 +19,15 @@ class Brain:
 
     def __init__(self, inner=None, genome=[], owner=None):
         self.owner=owner
-        self.inner = [0] * inner # number of inner neurons as a list
+        self.inner = inner #number of inner layers 
+        self.innerLayer = [0] * inner # number of inner neurons as a list
         self.genome=genome #list of genes
 
-        self.innWeights = [[0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0]]
 
-        self.outWeights = [[0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0],
-                           [0,0,0,0,0,0,0,0,0,0]]
+
+        self.innWeights = [[0]*(8 + inner) for i in range(inner)]
+
+        self.outWeights = [[0]*(8 + inner) for i in range(8)]
         
         self.buildBrain()
 
@@ -48,7 +36,7 @@ class Brain:
         if src == '0':
             return int(bitcode,2)%8
         elif src == '1':
-            return int(bitcode,2)%2 + 8
+            return int(bitcode,2)%self.inner + 8
 
     def getWeight(self, b):
         w = int(b, 2)
@@ -58,7 +46,7 @@ class Brain:
 
     def getSinkeNode(self, snk='', bitcode=''):
         if snk == '0':
-            return int(bitcode,2)%2
+            return int(bitcode,2)%self.inner
         elif snk == '1':
             return int(bitcode,2)%8
 
@@ -84,15 +72,15 @@ class Brain:
                 self.outWeights[sink][source] = weight
         
     def think(self, sensor=[0,0,0,0,0,0,0,0]):
-        inputLayer = sensor + self.inner
+        inputLayer = sensor + self.innerLayer
 
         #calculate inner layer
         inx = np.dot(self.innWeights, inputLayer)
 
         #replace inner neuron values
-        self.inner[0] = inx[0]
-        self.inner[1] = inx[1]
-        inputLayer = sensor + self.inner
+        self.innerLayer[0] = inx[0]
+        self.innerLayer[1] = inx[1]
+        inputLayer = sensor + self.innerLayer
 
         #calculate output layer
         onx = np.dot(self.outWeights, inputLayer)
@@ -106,7 +94,7 @@ class Creature:
 
     id_generator = 1
 
-    def __init__(self, genome=None, position=None, direction=None, parent1=None, parent2=None):
+    def __init__(self, geneLength=None, innerNeurons=None, genome=None, position=None, direction=None, parent1=None, parent2=None):
 
         #Creature takes on latest unique id, then bumps value by 1 for next creature to be created.
         self.id = Creature.id_generator
@@ -116,11 +104,11 @@ class Creature:
 
         # Generates random genome for creature if not assigned
         if genome == None:
-            self.genome = Genome(length=100, owner=self.id).genes
+            self.genome = Genome(length=geneLength, owner=self.id).genes
         else: self.genome = genome
 
         # Create a brain for creature
-        self.brain = Brain(inner=2, genome=self.genome, owner=self.id)
+        self.brain = Brain(inner=innerNeurons, genome=self.genome, owner=self.id)
     
     def updateInputs(self, world=None):
         x = self.position[0]+1
@@ -230,12 +218,9 @@ class Creature:
 
 
 # Testing
-
-# testCreature = Creature()
-
-# for i in range(1,10):
-#     testCreature.step()
-#     time.sleep(1)
+if __name__ == "__main__":
+    testCreature = Creature(geneLength=100, innerNeurons=3)
+    print(testCreature.brain.innWeights)
 
 
 
